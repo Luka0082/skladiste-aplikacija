@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}" class="active">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}">Dnevnik promjena</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Uređivanje lokacije</h1>
+            </header>
+
+            <div class="content-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                        <p style="background-color: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px; border: 1px solid #fca5a5; margin-bottom: 20px;">{{ message }}</p>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #cbd5e1; max-width: 600px;">
+                    <h3 style="margin-bottom: 20px; color: #0f172a;">Ažuriraj poziciju: {{ lokacija.sektor }} {{ lokacija.regal }}-{{ lokacija.polica }}</h3>
+                    
+                    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em;">Sektor (npr. Sektor A):</label>
+                            <input type="text" name="sektor" value="{{ lokacija.sektor }}" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em;">Regal (npr. R1):</label>
+                            <input type="text" name="regal" value="{{ lokacija.regal }}" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em;">Polica (npr. P1):</label>
+                            <input type="text" name="polica" value="{{ lokacija.polica }}" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                        </div>
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em;">Maksimalni kapacitet komada:</label>
+                            <input type="number" name="kapacitet" value="{{ lokacija.kapacitet }}" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                            <span style="font-size: 0.85em; color: #64748b;">Trenutno robe na polici: {{ zauzeto }} kom. (Kapacitet ne smije biti manji od ovog broja)</span>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <a href="{{ url_for('upravljanje_lokacijama') }}" style="padding: 12px 20px; background-color: #f1f5f9; color: #475569; text-decoration: none; font-weight: bold; border-radius: 4px; border: 1px solid #cbd5e1;">Odustani</a>
+                            <button type="submit" style="padding: 12px 20px; background-color: #0284c7; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer;">Spremi promjene</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

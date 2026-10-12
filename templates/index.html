@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Bočni Izbornik -->
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}" class="{% if active_page == 'tlocrt' %}active{% endif %}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}" class="{% if active_page == 'proizvodi' %}active{% endif %}">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}" class="{% if active_page == 'lokacije' %}active{% endif %}">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}" class="{% if active_page == 'premjestanje' %}active{% endif %}">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}" class="{% if active_page == 'dobavljaci' %}active{% endif %}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}" class="{% if active_page == 'narudzbe' %}active{% endif %}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}" class="{% if active_page == 'izvjestaji' %}active{% endif %}">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}" class="{% if active_page == 'transakcije' %}active{% endif %}">Dnevnik promjena</a></li>
+                {% if session['uloga'] == 'admin' %}
+                <li><a href="{{ url_for('upravljanje_korisnicima') }}" class="{% if active_page == 'korisnici' %}active{% endif %}">Zaposlenici (Admin)</a></li>
+                {% endif %}
+            </ul>
+
+            <div class="user-profile">
+                <p>Prijavljen:</p>
+                <strong>{{ session['ime'] }} {{ session['prezime'] }}</strong><br>
+                <span class="role-badge">{{ session['uloga']|upper }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Odjava →</a>
+            </div>
+        </aside>
+
+        <!-- Glavni Sadržaj -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Popunjenost skladišta</h1>
+            </header>
+
+            <div class="content-body">
+                {% if kriticni %}
+                <div class="alert-box">
+                    <strong>Upozorenje o zalihama:</strong> Sljedeći artikli su na ili ispod minimalne granice:
+                    <span style="font-weight: bold;">
+                        {% for k in kriticni %}{{ k.naziv }} ({{ k.ukupna_kolicina }} kom){% if not loop.last %}, {% endif %}{% endfor %}
+                    </span>.
+                </div>
+                {% endif %}
+
+                <div class="search-box">
+                    <input type="text" id="searchInput" onkeyup="filtrirajSkladiste()" placeholder="Pretraži sektor, regal ili opremu po nazivima...">
+                </div>
+
+                <!-- Dinamički filter gumbi za Sektore -->
+                <div class="filter-group" id="filterGroup">
+                    <button class="filter-btn active" onclick="filtrirajPoSektoru('SVI', this)">Svi sektori</button>
+                    {% for s in sektori %}
+                    <button class="filter-btn" onclick="filtrirajPoSektoru('{{ s }}', this)">{{ s }}</button>
+                    {% endfor %}
+                </div>
+
+                <div class="skladiste-grid" id="skladisteGrid">
+                    {% for l in lokacije %}
+                    <div class="sektor-card" data-sektor="{{ l.sektor }}">
+                        <h3>{{ l.sektor }}</h3>
+                        <div class="regal-item">
+                            <div class="regal-header">
+                                <span>Regal {{ l.regal }} (Polica {{ l.polica }})</span>
+                                <span>{{ l.zauzeto }}/{{ l.kapacitet }} kom</span>
+                            </div>
+                            
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill {% if l.postotak >= 90 %}danger{% elif l.postotak >= 70 %}warning{% endif %}" style="width: {{ l.postotak }}%;"></div>
+                            </div>
+
+                            <div class="proizvodi-lista">
+                                <strong>Pohranjena oprema:</strong>
+                                {% set artikli_na_lok = [] %}
+                                {% for p in proizvodi %}
+                                    {% if p.lokacija_id == l.id %}
+                                        {% set _ = artikli_na_lok.append(p) %}
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if artikli_na_lok %}
+                                <ul>
+                                    {% for p in artikli_na_lok %}
+                                    <li>{{ p.naziv }} - <strong>{{ p.kolicina }} kom</strong></li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <p style="font-style: italic; color: #94a3b8;">Pozicija je prazna</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let trenutniSektor = 'SVI';
+
+        function filtrirajPoSektoru(sektor, btnElement) {
+            trenutniSektor = sektor;
+
+            // Ažuriraj CSS klase za aktivni gumb
+            var btns = document.getElementsByClassName('filter-btn');
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].classList.remove('active');
+            }
+            btnElement.classList.add('active');
+
+            primijeniFiltere();
+        }
+
+        function filtrirajSkladiste() {
+            primijeniFiltere();
+        }
+
+        function primijeniFiltere() {
+            var input = document.getElementById('searchInput');
+            var filterText = input.value.toLowerCase();
+            var cards = document.getElementsByClassName('sektor-card');
+
+            for (var i = 0; i < cards.length; i++) {
+                var cardText = cards[i].innerText.toLowerCase();
+                var cardSektor = cards[i].getAttribute('data-sektor');
+
+                var odgovaraTekstu = cardText.includes(filterText);
+                var odgovaraSektoru = (trenutniSektor === 'SVI' || cardSektor === trenutniSektor);
+
+                // Karta se prikazuje samo ako zadovoljava oba uvjeta
+                if (odgovaraTekstu && odgovaraSektoru) {
+                    cards[i].style.display = "";
+                } else {
+                    cards[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

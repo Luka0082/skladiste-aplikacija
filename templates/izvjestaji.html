@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o. - Izvještaji</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background-color: white;
+            border: 1px solid #cbd5e1;
+            padding: 20px;
+            flex: 1;
+            border-top: 3px solid #0284c7;
+        }
+        .stat-card h3 {
+            font-size: 0.9em;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .stat-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #0f172a;
+        }
+        .stat-card.alert { border-top-color: #dc2626; }
+        .stat-card.alert .value { color: #dc2626; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Bočni Izbornik -->
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}" class="{% if active_page == 'tlocrt' %}active{% endif %}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}" class="{% if active_page == 'proizvodi' %}active{% endif %}">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}" class="{% if active_page == 'lokacije' %}active{% endif %}">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}" class="{% if active_page == 'premjestanje' %}active{% endif %}">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}" class="{% if active_page == 'dobavljaci' %}active{% endif %}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}" class="{% if active_page == 'narudzbe' %}active{% endif %}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}" class="active">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}" class="{% if active_page == 'transakcije' %}active{% endif %}">Dnevnik promjena</a></li>
+                {% if session['uloga'] == 'admin' %}
+                <li><a href="{{ url_for('upravljanje_korisnicima') }}" class="{% if active_page == 'korisnici' %}active{% endif %}">Zaposlenici (Admin)</a></li>
+                {% endif %}
+            </ul>
+
+            <div class="user-profile">
+                <p>Prijavljen:</p>
+                <strong>{{ session['ime'] }} {{ session['prezime'] }}</strong><br>
+                <span class="role-badge">{{ session['uloga']|upper }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Odjava →</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Financijski i analitički izvještaji</h1>
+            </header>
+
+            <div class="content-body">
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <h3>Ukupno artikala u skladištu</h3>
+                        <div class="value">{{ ukupno_artikala }} kom</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Ukupna vrijednost zaliha</h3>
+                        <!-- AŽURIRANO: Odvajanje tisućica točkom i decimala zarezom -->
+                        <div class="value">{{ "{:,.2f}".format(ukupna_vrijednost).replace(',', 'X').replace('.', ',').replace('X', '.') }} €</div>
+                    </div>
+                    <div class="stat-card alert">
+                        <h3>Kritični artikli (ispod minimuma)</h3>
+                        <div class="value">{{ broj_kriticnih }} vrsta</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 15px;">
+                    <h2>Zalihe i vrijednost po kategorijama</h2>
+                    <a href="{{ url_for('export_izvjestaji_csv') }}" style="background-color: #10b981; color: white; padding: 8px 16px; text-decoration: none; font-weight: bold; font-size: 0.9em; border-radius: 4px;">Preuzmi CSV</a>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kategorija opreme</th>
+                            <th>Ukupno komada na skladištu</th>
+                            <th>Financijska vrijednost (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in po_kategorijama %}
+                        <tr>
+                            <td><strong>{{ r.naziv }}</strong></td>
+                            <td>{{ r.kolicina }} kom</td>
+                            <!-- AŽURIRANO: Isto formatiranje za tablicu -->
+                            <td>{{ "{:,.2f}".format(r.vrijednost).replace(',', 'X').replace('.', ',').replace('X', '.') }} €</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #64748b;">Nema podataka za prikaz.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

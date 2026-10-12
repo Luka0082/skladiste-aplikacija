@@ -1,0 +1,489 @@
+/* Omogućuje glatko skrolanje na cijeloj stranici i unutar tablica/kontejnera */
+html, body, .main-content, div {
+    scroll-behavior: smooth;
+    overscroll-behavior: none;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #f8fafc;
+    color: #1e293b;
+}
+
+/* Sakrivanje strelica na brojčanim unosima */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Bočni izbornik */
+.sidebar {
+    width: 240px;
+    background-color: #0f172a;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: 1px solid #1e293b;
+}
+
+.brand-header {
+    padding: 20px;
+    background-color: #020617;
+    border-bottom: 1px solid #1e293b;
+}
+
+.brand-header h2 {
+    font-size: 1.1em;
+    color: #38bdf8;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.nav-menu {
+    list-style: none;
+    padding: 10px 0;
+    flex-grow: 1;
+}
+
+.nav-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 11px 20px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.88em;
+    transition: all 0.15s ease;
+    border-left: 3px solid transparent;
+}
+
+.nav-menu li a:hover {
+    background-color: #1e293b;
+    color: #f8fafc;
+}
+
+.nav-menu li a.active {
+    background-color: #1e293b;
+    color: #38bdf8;
+    border-left-color: #38bdf8;
+    font-weight: 600;
+}
+
+.user-profile {
+    padding: 15px 20px;
+    background-color: #020617;
+    border-top: 1px solid #1e293b;
+    font-size: 0.8em;
+}
+
+.user-profile .role-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: #334155;
+    color: #38bdf8;
+    border-radius: 2px;
+    font-weight: 600;
+    font-size: 0.8em;
+    margin-top: 4px;
+}
+
+.logout-btn {
+    display: block;
+    margin-top: 8px;
+    color: #ef4444;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-bar {
+    background-color: #ffffff;
+    padding: 16px 30px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.top-bar h1 {
+    font-size: 1.25em;
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.content-body {
+    padding: 25px 30px;
+}
+
+/* Pretraživanje */
+.search-box input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 2px;
+    font-size: 0.9em;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+}
+
+/* Skladišna mreža (Grid tlocrt) */
+.skladiste-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.sektor-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 16px;
+    border-top: 3px solid #0284c7;
+}
+
+.sektor-card h3 {
+    font-size: 0.95em;
+    color: #0f172a;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.regal-item {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+
+.regal-item:last-child {
+    margin-bottom: 0;
+}
+
+.regal-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 0.85em;
+    color: #334155;
+}
+
+.progress-bar-bg {
+    background-color: #e2e8f0;
+    height: 6px;
+    width: 100%;
+    margin: 8px 0;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background-color: #16a34a;
+    transition: width 0.3s ease;
+}
+
+.progress-bar-fill.warning { background-color: #ca8a04; }
+.progress-bar-fill.danger { background-color: #dc2626; }
+
+.proizvodi-lista {
+    font-size: 0.82em;
+    color: #64748b;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.proizvodi-lista ul {
+    list-style-position: inside;
+    padding-left: 0;
+}
+
+.alert-box {
+    background-color: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-left: 4px solid #dc2626;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 0.88em;
+    color: #991b1b;
+}
+
+/* Tablice */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+}
+
+th {
+    background-color: #f1f5f9;
+    color: #334155;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 0.82em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #cbd5e1;
+    border-right: 1px solid #e2e8f0;
+}
+
+th:last-child {
+    border-right: none;
+}
+
+td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #f1f5f9;
+    font-size: 0.88em;
+    color: #334155;
+    vertical-align: middle;
+}
+
+td:last-child {
+    border-right: none;
+}
+
+tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Inputi i Forme */
+input[type=text], input[type=email], select {
+    border: 1px solid #cbd5e1;
+    border-radius: 2px;
+    outline: none;
+    font-size: 0.88em;
+}
+
+input[type=text]:focus, select:focus {
+    border-color: #0284c7;
+}
+
+/* Ikonice i Gumbi */
+.icon-btn-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 2px;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+
+.action-icon:hover {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
+.action-icon.delete-icon:hover {
+    background-color: #fef2f2;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+.btn-sm {
+    padding: 5px 8px;
+    font-size: 0.78em;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap; 
+    flex-shrink: 0; 
+}
+
+.btn-ulaz { background-color: #16a34a; color: white; }
+.btn-ulaz:hover { background-color: #15803d; }
+
+.btn-izlaz { background-color: #ea580c; color: white; }
+.btn-izlaz:hover { background-color: #c2410c; }
+
+/* Filter gumbi za sektore */
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-btn {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 6px 16px;
+    border-radius: 20px; /* Moderni 'pill' oblik */
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+
+.filter-btn.active {
+    background-color: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+}
+
+/* Pop-up prozor (Modal) za odabir lokacije */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 25px 30px;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-top: 4px solid #0284c7;
+}
+
+.modal-content h3 {
+    margin-bottom: 10px;
+    color: #0f172a;
+    font-size: 1.1em;
+}
+
+.modal-content p {
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    color: #475569;
+    line-height: 1.4;
+}
+
+.modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-cancel {
+    padding: 8px 14px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    color: #475569;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-cancel:hover {
+    background: #f1f5f9;
+}
+
+.btn-confirm {
+    padding: 8px 14px;
+    background: #0284c7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-confirm:hover {
+    background: #0369a1;
+}
+
+/* Gumb za brisanje (Crveni) */
+.btn-danger {
+    padding: 8px 14px;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+/* Fiksiranje lijevog izbornika (Sticky) */
+.app-container {
+    align-items: flex-start !important;
+}
+
+.sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+}

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Bočni Izbornik -->
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}" class="{% if active_page == 'tlocrt' %}active{% endif %}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}" class="active">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}" class="{% if active_page == 'lokacije' %}active{% endif %}">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}" class="{% if active_page == 'premjestanje' %}active{% endif %}">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}" class="{% if active_page == 'dobavljaci' %}active{% endif %}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}" class="{% if active_page == 'narudzbe' %}active{% endif %}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}" class="{% if active_page == 'izvjestaji' %}active{% endif %}">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}" class="{% if active_page == 'transakcije' %}active{% endif %}">Dnevnik promjena</a></li>
+                {% if session['uloga'] == 'admin' %}
+                <li><a href="{{ url_for('upravljanje_korisnicima') }}" class="{% if active_page == 'korisnici' %}active{% endif %}">Zaposlenici (Admin)</a></li>
+                {% endif %}
+            </ul>
+
+            <div class="user-profile">
+                <p>Prijavljen:</p>
+                <strong>{{ session['ime'] }} {{ session['prezime'] }}</strong><br>
+                <span class="role-badge">{{ session['uloga']|upper }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Odjava →</a>
+            </div>
+        </aside>
+
+        <!-- Glavni Sadržaj -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Katalog proizvoda</h1>
+            </header>
+
+            <div class="content-body">
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                        {% if category == 'success' %}
+                            <p style="background-color: #f0fdf4; color: #166534; padding: 12px; border-radius: 6px; border: 1px solid #bbf7d0; margin-bottom: 20px; font-weight: 500;">{{ message }}</p>
+                        {% elif category == 'info' %}
+                            <p style="background-color: #eff6ff; color: #1e40af; padding: 12px; border-radius: 6px; border: 1px solid #bfdbfe; margin-bottom: 20px; font-weight: 500;">{{ message }}</p>
+                        {% else %}
+                            <p style="background-color: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px; border: 1px solid #fca5a5; margin-bottom: 20px; font-weight: 500;">{{ message }}</p>
+                        {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                {% if session['uloga'] in ['admin', 'poslovoda'] %}
+                <div style="background: white; padding: 18px; border: 1px solid #cbd5e1; margin-bottom: 25px;">
+                    <h3 style="margin-bottom: 12px; font-size: 0.95em; color: #475569;">Dodaj novi artikl</h3>
+                    <form id="form-dodaj-novi" method="POST" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <input type="hidden" name="lokacija_id" id="noviArtiklLokacijaId">
+                        
+                        <input type="text" name="naziv" placeholder="Naziv opreme" value="{{ form_data.get('naziv', '') if form_data else '' }}" required style="padding: 8px;">
+                        <input type="text" name="sifra" placeholder="Šifra (npr. RAM-KG-01)" value="{{ form_data.get('sifra', '') if form_data else '' }}" required style="padding: 8px;">
+                        <input type="text" name="kolicina" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Početna količina" value="{{ form_data.get('kolicina', '') if form_data else '' }}" required style="padding: 8px;">
+                        <input type="text" name="min_kolicina" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Min. količina za upozorenje" value="{{ form_data.get('min_kolicina', '') if form_data else '' }}" required style="padding: 8px;">
+                        <input type="text" name="cijena" inputmode="decimal" oninput="this.value = this.value.replace(/[^0-9.,]/g, '')" placeholder="Cijena (€)" value="{{ form_data.get('cijena', '') if form_data else '' }}" required style="padding: 8px;">
+                        
+                        <select name="kategorija_id" required style="padding: 8px;">
+                            <option value="">-- Odaberi kategoriju --</option>
+                            {% for k in kategorije %}
+                            <option value="{{ k.id }}" {% if form_data and form_data.get('kategorija_id')|string == k.id|string %}selected{% endif %}>{{ k.naziv }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <select name="dobavljac_id" required style="padding: 8px; grid-column: span 3;">
+                            <option value="">-- Odaberi dobavljača --</option>
+                            {% for d in dobavljaci %}
+                            <option value="{{ d.id }}" {% if form_data and form_data.get('dobavljac_id')|string == d.id|string %}selected{% endif %}>{{ d.naziv }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit" style="grid-column: span 3; padding: 10px; background-color: #0284c7; color: white; border: none; font-weight: 600; cursor: pointer;">+ Spremi</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <h2 style="font-size: 1.05em; margin-bottom: 12px; color: #334155;">Trenutne zalihe na skladištu</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Šifra</th>
+                                <th>Naziv Opreme</th>
+                                <th>Dobavljač</th>
+                                <th>Količina</th>
+                                <th>Cijena (€)</th>
+                                <th>Lokacija</th>
+                                <th>Brza promjena zalihe</th>
+                                {% if session['uloga'] in ['admin', 'poslovoda'] %}
+                                <th style="text-align: center; width: 80px;">Akcije</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in proizvodi %}
+                            <tr>
+                                <td><code style="background: #f1f5f9; padding: 2px 5px; font-weight: 600; white-space: nowrap;">{{ p.sifra }}</code></td>
+                                <td><strong>{{ p.naziv }}</strong></td>
+                                <td>{{ p.dobavljac_naziv or '-' }}</td>
+                                <td style="white-space: nowrap;">
+                                    {% if p.ukupna_kolicina <= p.min_kolicina %}
+                                        <span style="color: #dc2626; font-weight: 700;">{{ p.ukupna_kolicina }} kom ⚠️</span>
+                                    {% else %}
+                                        <strong>{{ p.ukupna_kolicina }} kom</strong>
+                                    {% endif %}
+                                </td>
+                                <td style="white-space: nowrap;">{{ "%.2f"|format(p.cijena) }} €</td>
+                                <td style="white-space: nowrap;">
+                                    {% if p.lokacije_lista %}
+                                        {% for loc in p.lokacije_lista %}
+                                            <div style="font-size: 0.9em; margin-bottom: 2px;">
+                                                {{ loc.sektor }} ({{ loc.regal }}-{{ loc.polica }}): <strong>{{ loc.kolicina }} kom</strong>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <em style="color: #94a3b8;">Nedodijeljeno</em>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form id="form-promjena-{{ p.id }}" action="{{ url_for('promjena_zalihe', id=p.id) }}" method="POST" style="display: flex; gap: 4px; align-items: center; min-width: max-content;">
+                                        <input type="text" id="kolicina-{{ p.id }}" name="kolicina" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" value="1" style="width: 36px; height: 28px; padding: 2px; text-align: center; font-size: 0.85em; flex-shrink: 0;" required>
+                                        <input type="text" id="napomena-{{ p.id }}" name="napomena" placeholder="Napomena..." style="width: 90px; height: 28px; padding: 2px 6px; font-size: 0.85em; flex-shrink: 0;">
+                                        
+                                        <button type="button" class="btn-sm btn-ulaz" style="height: 28px;" onclick="obradiUlaz('{{ p.id }}')">+ Ulaz</button>
+                                        <button type="button" class="btn-sm btn-izlaz" style="height: 28px; background-color: #dc2626; color: white;" onclick="obradiIzlaz('{{ p.id }}')">- Izlaz</button>
+                                    </form>
+                                </td>
+                                {% if session['uloga'] in ['admin', 'poslovoda'] %}
+                                <td style="text-align: center;">
+                                    <div class="icon-btn-group" style="justify-content: center;">
+                                        <a href="{{ url_for('uredi_proizvod', id=p.id) }}" class="action-icon" title="Uredi">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </a>
+                                        <button type="button" class="action-icon delete-icon" title="Obriši" onclick="otvoriBrisanjeModal({{ p.id }}, '{{ p.naziv | replace('\'', '\\\'') | replace('\"', '&quot;') }}')">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </div>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: #94a3b8; padding: 20px;">Nema unesenih artikala u katalogu.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SAKRIVENI POP-UP PROZOR: Odabir lokacije za NOVI ARTIKL -->
+    <div id="noviArtiklLokacijaModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Smještaj novog artikla na policu</h3>
+            <p>Unosite novi artikl <strong id="noviArtiklNazivText" style="color: #0f172a;"></strong> s početnom količinom od <strong id="noviArtiklKolicinaText" style="color: #0284c7;"></strong> kom.</p>
+            <p style="font-size: 0.85em; color: #64748b; margin-top: 5px; margin-bottom: 15px;">Odaberite na koju skladišnu policu želite smjestiti artikl:</p>
+            
+            <form id="noviArtiklLokacijaForm" onsubmit="potvrdiLokacijuNovogArtikla(event)">
+                <select id="noviArtiklLokacijaSelect" required style="width: 100%; padding: 10px; margin-bottom: 20px;">
+                </select>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="zatvoriNoviArtiklLokacijaModal()">Odustani</button>
+                    <button type="submit" class="btn-confirm">Spremi i smjesti</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SAKRIVENI POP-UP PROZOR: Odabir lokacije za ULAZ -->
+    <div id="lokacijaModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Smještaj opreme na policu</h3>
+            <p>
+                <span id="modalPorukaOpis">Odaberite na koju fizičku lokaciju u skladištu odlažete opremu:</span>
+                <strong id="modalArtiklNaziv" style="color: #0f172a;"></strong>.
+            </p>
+            
+            <form id="modalForm" method="POST">
+                <input type="hidden" name="tip" value="ULAZ">
+                <input type="hidden" name="kolicina" id="modalKolicina">
+                <input type="hidden" name="dodaj_na_staru" id="modalDodajNaStaru" value="0">
+                <input type="hidden" name="napomena" id="modalNapomena">
+                
+                <select name="nova_lokacija_id" required style="width: 100%; padding: 10px; margin-bottom: 20px;">
+                    <option value="">-- Odaberi slobodnu policu --</option>
+                    {% for l in lokacije %}
+                        {% if l.slobodno > 0 %}
+                        <option value="{{ l.id }}">{{ l.sektor }} (Regal {{ l.regal }}, Polica {{ l.polica }}) [Slobodno: {{ l.slobodno }}]</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="zatvoriModal()">Odustani</button>
+                    <button type="submit" class="btn-confirm">Zaprimi robu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SAKRIVENI POP-UP PROZOR: Odabir lokacije za IZLAZ -->
+    <div id="izlazLokacijaModal" class="modal-overlay">
+        <div class="modal-content" style="border-top-color: #dc2626;">
+            <h3>Izdavanje opreme s police</h3>
+            <p>Odaberite s koje police izdajete <strong id="izlazModalKolicinaText"></strong> opreme <strong id="izlazModalArtiklNaziv" style="color: #0f172a;"></strong>:</p>
+            
+            <form id="izlazModalForm" method="POST">
+                <input type="hidden" name="tip" value="IZLAZ">
+                <input type="hidden" name="kolicina" id="izlazModalKolicina">
+                <input type="hidden" name="napomena" id="izlazModalNapomena">
+                
+                <select name="odabrani_id" id="izlazLokacijaSelect" required style="width: 100%; padding: 10px; margin-bottom: 20px;">
+                </select>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="zatvoriIzlazModal()">Odustani</button>
+                    <button type="submit" class="btn-danger">Izdaj robu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SAKRIVENI POP-UP PROZOR: Potvrda brisanja -->
+    <div id="brisanjeModal" class="modal-overlay">
+        <div class="modal-content" style="border-top-color: #dc2626;">
+            <h3>Potvrda brisanja artikla</h3>
+            <p>Jeste li sigurni da želite trajno obrisati <strong id="brisanjeArtiklNaziv" style="color: #0f172a;"></strong> iz baze podataka? Ova akcija se ne može poništiti.</p>
+            
+            <form id="brisanjeForm" method="POST">
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="zatvoriBrisanjeModal()">Odustani</button>
+                    <button type="submit" class="btn-danger">Obriši artikl</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        var proizvodiPodaci = {
+            {% for p in proizvodi %}
+            "{{ p.id }}": {
+                "naziv": "{{ p.naziv | replace('\'', '\\\'') | replace('\"', '&quot;') }}",
+                "sifra": "{{ p.sifra }}",
+                "brojLokacija": {{ p.lokacije_lista | length }},
+                "lokacije": [
+                    {% for loc in p.lokacije_lista %}
+                    {
+                        "id": {{ loc.id }},
+                        "lokacija_id": {{ loc.lokacija_id }},
+                        "sektor": "{{ loc.sektor }}",
+                        "regal": "{{ loc.regal }}",
+                        "polica": "{{ loc.polica }}",
+                        "kolicina": {{ loc.kolicina }}
+                    },
+                    {% endfor %}
+                ]
+            },
+            {% endfor %}
+        };
+
+        var lokacijeSlobodnoMap = {
+            {% for l in lokacije %}
+                "{{ l.id }}": {{ l.slobodno }},
+            {% endfor %}
+        };
+
+        var sveLokacijePodaci = [
+            {% for l in lokacije %}
+            {
+                "id": {{ l.id }},
+                "sektor": "{{ l.sektor }}",
+                "regal": "{{ l.regal }}",
+                "polica": "{{ l.polica }}",
+                "slobodno": {{ l.slobodno }}
+            },
+            {% endfor %}
+        ];
+
+        // RUKOVANJE UNOSOM NOVOG ARTIKLA
+        var formDodajNovi = document.getElementById('form-dodaj-novi');
+        if (formDodajNovi) {
+            formDodajNovi.addEventListener('submit', function(e) {
+                var kolicinaInput = this.querySelector('input[name="kolicina"]');
+                var kolicina = parseInt(kolicinaInput.value) || 0;
+                var lokacijaIdInput = document.getElementById('noviArtiklLokacijaId');
+
+                if (kolicina > 0 && !lokacijaIdInput.value) {
+                    if (this.checkValidity()) {
+                        e.preventDefault();
+                        var naziv = this.querySelector('input[name="naziv"]').value;
+                        otvoriNoviArtiklLokacijaModal(naziv, kolicina);
+                    }
+                }
+            });
+        }
+
+        function otvoriNoviArtiklLokacijaModal(naziv, kolicina) {
+            document.getElementById('noviArtiklNazivText').innerText = naziv;
+            document.getElementById('noviArtiklKolicinaText').innerText = kolicina;
+
+            var select = document.getElementById('noviArtiklLokacijaSelect');
+            select.innerHTML = '<option value="">-- Odaberi slobodnu policu --</option>';
+
+            var pronadjeno = false;
+            sveLokacijePodaci.forEach(function(l) {
+                if (l.slobodno >= kolicina) {
+                    pronadjeno = true;
+                    var opt = document.createElement('option');
+                    opt.value = l.id;
+                    opt.innerText = l.sektor + " (Regal " + l.regal + ", Polica " + l.polica + ") [Slobodno: " + l.slobodno + " kom]";
+                    select.appendChild(opt);
+                }
+            });
+
+            if (!pronadjeno) {
+                var opt = document.createElement('option');
+                opt.value = "";
+                opt.disabled = true;
+                opt.innerText = "Nema polica s dovoljno slobodnog kapaciteta (" + kolicina + " kom)!";
+                select.appendChild(opt);
+            }
+
+            document.getElementById('noviArtiklLokacijaModal').style.display = 'flex';
+        }
+
+        function zatvoriNoviArtiklLokacijaModal() {
+            document.getElementById('noviArtiklLokacijaModal').style.display = 'none';
+        }
+
+        function potvrdiLokacijuNovogArtikla(e) {
+            e.preventDefault();
+            var select = document.getElementById('noviArtiklLokacijaSelect');
+            if (!select.value) return;
+
+            document.getElementById('noviArtiklLokacijaId').value = select.value;
+            document.getElementById('noviArtiklLokacijaModal').style.display = 'none';
+            document.getElementById('form-dodaj-novi').submit();
+        }
+
+        function obradiUlaz(id) {
+            var p = proizvodiPodaci[id];
+            var kolicinaInput = document.getElementById('kolicina-' + id);
+            var napomenaInput = document.getElementById('napomena-' + id);
+            var kolicina = parseInt(kolicinaInput.value) || 1;
+            var napomena = napomenaInput.value;
+
+            if (p.brojLokacija === 0) {
+                otvoriLokacijaModal(id, p.naziv, kolicina, 0, napomena, "Odaberite na koju fizičku lokaciju u skladištu odlažete opremu:");
+            } else if (p.brojLokacija === 1) {
+                var loc = p.lokacije[0];
+                var slobodno = lokacijeSlobodnoMap[loc.lokacija_id] !== undefined ? lokacijeSlobodnoMap[loc.lokacija_id] : 0;
+
+                if (kolicina <= slobodno) {
+                    posaljiIzravno(loc.id, 'ULAZ', kolicina, napomena);
+                } else {
+                    var dodajNaStaru = slobodno;
+                    var preostalo = kolicina - dodajNaStaru;
+                    var poruka = "";
+                    if (slobodno === 0) {
+                        poruka = "Na trenutnoj polici nema slobodnog mjesta (0 kom). Odaberite novu policu za unesenih " + kolicina + " kom artikla";
+                    } else {
+                        poruka = "Na trenutnoj polici ima mjesta za još " + slobodno + " kom. Popunit ćemo trenutnu policu do maksimuma, a za preostala " + preostalo + " kom. odaberite drugu policu za artikl";
+                    }
+                    otvoriLokacijaModal(loc.id, p.naziv, preostalo, dodajNaStaru, napomena, poruka);
+                }
+            } else {
+                otvoriLokacijaModal(id, p.naziv, kolicina, 0, napomena, "Artikl se već nalazi na više lokacija. Odaberite policu za smještaj novih " + kolicina + " kom artikla");
+            }
+        }
+
+        function obradiIzlaz(id) {
+            var p = proizvodiPodaci[id];
+            var kolicinaInput = document.getElementById('kolicina-' + id);
+            var napomenaInput = document.getElementById('napomena-' + id);
+            var kolicina = parseInt(kolicinaInput.value) || 1;
+            var napomena = napomenaInput.value;
+
+            if (p.brojLokacija <= 1) {
+                var locId = p.brojLokacija === 1 ? p.lokacije[0].id : id;
+                posaljiIzravno(locId, 'IZLAZ', kolicina, napomena);
+            } else {
+                otvoriIzlazModal(id, kolicina, napomena);
+            }
+        }
+
+        function posaljiIzravno(proizvodId, tip, kolicina, napomena) {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/proizvod/promjena_zalihe/' + proizvodId;
+
+            var tipInput = document.createElement('input');
+            tipInput.type = 'hidden';
+            tipInput.name = 'tip';
+            tipInput.value = tip;
+            form.appendChild(tipInput);
+
+            var kolInput = document.createElement('input');
+            kolInput.type = 'hidden';
+            kolInput.name = 'kolicina';
+            kolInput.value = kolicina;
+            form.appendChild(kolInput);
+
+            var napInput = document.createElement('input');
+            napInput.type = 'hidden';
+            napInput.name = 'napomena';
+            napInput.value = napomena;
+            form.appendChild(napInput);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function otvoriLokacijaModal(id, naziv, kolicinaZaNovu, dodajNaStaru, napomena, porukaOpis) {
+            document.getElementById('modalArtiklNaziv').innerText = naziv;
+            document.getElementById('modalKolicina').value = kolicinaZaNovu;
+            document.getElementById('modalDodajNaStaru').value = dodajNaStaru;
+            document.getElementById('modalNapomena').value = napomena;
+            document.getElementById('modalForm').action = "/proizvod/promjena_zalihe/" + id;
+            
+            if (porukaOpis) {
+                document.getElementById('modalPorukaOpis').innerText = porukaOpis;
+            } else {
+                document.getElementById('modalPorukaOpis').innerText = "Odaberite na koju fizičku lokaciju u skladištu odlažete opremu:";
+            }
+            
+            document.getElementById('lokacijaModal').style.display = 'flex';
+        }
+
+        function zatvoriModal() {
+            document.getElementById('modalForm').reset();
+            document.getElementById('lokacijaModal').style.display = 'none';
+        }
+
+        function otvoriIzlazModal(id, kolicina, napomena) {
+            var p = proizvodiPodaci[id];
+            document.getElementById('izlazModalArtiklNaziv').innerText = p.naziv;
+            document.getElementById('izlazModalKolicinaText').innerText = kolicina + " kom";
+            document.getElementById('izlazModalKolicina').value = kolicina;
+            document.getElementById('izlazModalNapomena').value = napomena;
+
+            var select = document.getElementById('izlazLokacijaSelect');
+            select.innerHTML = '<option value="">-- Odaberi policu s koje izdaješ --</option>';
+
+            p.lokacije.forEach(function(loc) {
+                var opt = document.createElement('option');
+                opt.value = loc.id;
+                opt.innerText = loc.sektor + " (" + loc.regal + "-" + loc.polica + ") [Na zalihi: " + loc.kolicina + " kom]";
+                select.appendChild(opt);
+            });
+
+            document.getElementById('izlazModalForm').action = "/proizvod/promjena_zalihe/" + (p.lokacije[0] ? p.lokacije[0].id : id);
+
+            select.onchange = function() {
+                if (this.value) {
+                    document.getElementById('izlazModalForm').action = "/proizvod/promjena_zalihe/" + this.value;
+                }
+            };
+
+            document.getElementById('izlazLokacijaModal').style.display = 'flex';
+        }
+
+        function zatvoriIzlazModal() {
+            document.getElementById('izlazModalForm').reset();
+            document.getElementById('izlazLokacijaModal').style.display = 'none';
+        }
+
+        function otvoriBrisanjeModal(id, naziv) {
+            document.getElementById('brisanjeArtiklNaziv').innerText = naziv;
+            document.getElementById('brisanjeForm').action = "/proizvod/obrisi/" + id;
+            
+            document.getElementById('brisanjeModal').style.display = 'flex';
+        }
+
+        function zatvoriBrisanjeModal() {
+            document.getElementById('brisanjeForm').reset();
+            document.getElementById('brisanjeModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

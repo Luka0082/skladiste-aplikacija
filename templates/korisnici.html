@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}">Dnevnik promjena</a></li>
+                {% if session['uloga'] == 'admin' %}
+                <li><a href="{{ url_for('upravljanje_korisnicima') }}" class="active">Zaposlenici (Admin)</a></li>
+                {% endif %}
+            </ul>
+            <div class="user-profile">
+                <p>Prijavljen:</p>
+                <strong>{{ session['ime'] }} {{ session['prezime'] }}</strong><br>
+                <span class="role-badge">{{ session['uloga']|upper }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Odjava →</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Upravljanje zaposlenicima i pravima pristupa</h1>
+            </header>
+
+            <div class="content-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                        {% if category == 'success' %}
+                            <p style="background-color: #f0fdf4; color: #166534; padding: 12px; border-radius: 6px; border: 1px solid #bbf7d0; margin-bottom: 20px; font-weight: 500;">{{ message }}</p>
+                        {% elif category == 'info' %}
+                            <p style="background-color: #eff6ff; color: #1e40af; padding: 12px; border-radius: 6px; border: 1px solid #bfdbfe; margin-bottom: 20px; font-weight: 500;">{{ message }}</p>
+                        {% else %}
+                            <p style="background-color: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px; border: 1px solid #fca5a5; margin-bottom: 20px; font-weight: 500;">{{ message }}</p>
+                        {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #cbd5e1;">
+                    <h3 style="margin-bottom: 15px;">Registracija novog zaposlenika</h3>
+                    <!-- Forma popravljena na uredan 2-stupčani dizajn -->
+                    <form method="POST" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <input type="text" name="ime" placeholder="Ime" required style="padding: 10px;">
+                        <input type="text" name="prezime" placeholder="Prezime" required style="padding: 10px;">
+                        
+                        <input type="text" name="korisnicko_ime" placeholder="Korisničko ime (Login)" required style="padding: 10px;">
+                        <input type="password" name="lozinka" placeholder="Lozinka" required style="padding: 10px;">
+                        
+                        <select name="uloga" required style="padding: 10px; grid-column: span 2;">
+                            <option value="">-- Odaberi ulogu zaposlenika --</option>
+                            <option value="skladistar">Skladištar (samo ulaz/izlaz)</option>
+                            <option value="poslovoda">Poslovođa (unos novih artikala i narudžbi)</option>
+                            <option value="admin">Administrator (sve ovlasti)</option>
+                        </select>
+                        
+                        <button type="submit" style="grid-column: span 2; padding: 12px; background-color: #0284c7; color: white; border: none; font-weight: bold; cursor: pointer;">+ Kreiraj račun</button>
+                    </form>
+                </div>
+
+                <!-- Očišćen naslov i dodan razmak -->
+                <h2 style="margin-bottom: 15px; color: #0f172a;">Korisnički računi</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ime i Prezime</th>
+                            <th>Korisničko Ime</th>
+                            <th>Uloga u Sustavu</th>
+                            <th style="text-align: center; width: 80px;">Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in korisnici %}
+                        <tr>
+                            <td><strong>{{ k.ime }} {{ k.prezime }}</strong> {% if k.id == session['user_id'] %}<span style="color: #0284c7; font-size: 0.85em;">(Vaš račun)</span>{% endif %}</td>
+                            <td><code>{{ k.korisnicko_ime }}</code></td>
+                            <!-- Vraćen običan tekst bez bedževa i boja -->
+                            <td>
+                                {% if k.uloga == 'admin' %}
+                                    Administrator
+                                {% elif k.uloga == 'poslovoda' %}
+                                    Poslovođa
+                                {% else %}
+                                    Skladištar
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                <div class="icon-btn-group" style="justify-content: center;">
+                                    <a href="{{ url_for('uredi_korisnika', id=k.id) }}" class="action-icon" title="Uredi">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    </a>
+                                    {% if k.id != session['user_id'] %}
+                                    <button type="button" class="action-icon delete-icon" title="Obriši" onclick="otvoriBrisanjeKorisnikaModal({{ k.id }}, '{{ k.ime }} {{ k.prezime }}')">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
+                                    {% else %}
+                                    <span style="display: inline-block; width: 30px;"></span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- SAKRIVENI POP-UP PROZOR: Potvrda brisanja korisnika -->
+    <div id="brisanjeKorisnikaModal" class="modal-overlay">
+        <div class="modal-content" style="border-top-color: #dc2626;">
+            <h3>Brisanje zaposlenika</h3>
+            <p>Jeste li sigurni da želite obrisati zaposlenika <strong id="brisanjeKorisnikNaziv" style="color: #0f172a;"></strong> iz sustava?</p>
+            
+            <form id="brisanjeKorisnikaForm" method="POST">
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="zatvoriBrisanjeKorisnikaModal()">Odustani</button>
+                    <button type="submit" class="btn-danger">Obriši račun</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function otvoriBrisanjeKorisnikaModal(id, naziv) {
+            document.getElementById('brisanjeKorisnikNaziv').innerText = naziv;
+            document.getElementById('brisanjeKorisnikaForm').action = "/korisnik/obrisi/" + id;
+            document.getElementById('brisanjeKorisnikaModal').style.display = 'flex';
+        }
+
+        function zatvoriBrisanjeKorisnikaModal() {
+            document.getElementById('brisanjeKorisnikaModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

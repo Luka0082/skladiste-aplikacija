@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Bočni Izbornik -->
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="active">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}">Dnevnik promjena</a></li>
+                {% if session['uloga'] == 'admin' %}
+                <li><a href="{{ url_for('upravljanje_korisnicima') }}">Zaposlenici (Admin)</a></li>
+                {% endif %}
+            </ul>
+
+            <div class="user-profile">
+                <p>Prijavljen:</p>
+                <strong>{{ session['ime'] }} {{ session['prezime'] }}</strong><br>
+                <span class="role-badge">{{ session['uloga']|upper }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Odjava →</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Uređivanje kategorije</h1>
+            </header>
+
+            <div class="content-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                        <p style="background-color: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px; border: 1px solid #fca5a5; margin-bottom: 20px; font-weight: 500;"> {{ message }}</p>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #cbd5e1; max-width: 600px;">
+                    <h3 style="margin-bottom: 20px;">Izmjena naziva kategorije</h3>
+                    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="display: block; font-weight: bold; margin-bottom: 5px;">Naziv kategorije:</label>
+                            <input type="text" name="naziv" value="{{ kategorija.naziv }}" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <a href="{{ url_for('upravljanje_kategorijama') }}" class="btn-cancel" style="padding: 10px 15px; text-decoration: none; text-align: center;">Odustani</a>
+                            <button type="submit" class="btn-confirm" style="padding: 10px 20px;">Spremi promjene</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Prijava - Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f1f5f9;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 400px;
+            border-top: 4px solid #0284c7;
+        }
+        .login-card h2 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #0f172a;
+        }
+        .login-card p.subtitle {
+            color: #64748b;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 0.85em;
+            color: #334155;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background-color: #0284c7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .btn-login:hover {
+            background-color: #0369a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Mladinović d.o.o.</h2>
+        <p class="subtitle">Skladišni sustav - Prijava u račun</p>
+
+        <!-- NOVI PAMETNI BLOK ZA PORUKE -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+                {% if category == 'success' %}
+                    <p style="background-color: #f0fdf4; color: #166534; padding: 10px; border-radius: 4px; border: 1px solid #bbf7d0; margin-bottom: 15px; font-size: 0.85em; font-weight: 500;"> {{ message }}</p>
+                {% elif category == 'info' %}
+                    <p style="background-color: #eff6ff; color: #1e40af; padding: 10px; border-radius: 4px; border: 1px solid #bfdbfe; margin-bottom: 15px; font-size: 0.85em; font-weight: 500;"> {{ message }}</p>
+                {% else %}
+                    <p style="background-color: #fef2f2; color: #991b1b; padding: 10px; border-radius: 4px; border: 1px solid #fca5a5; margin-bottom: 15px; font-size: 0.85em; font-weight: 500;"> {{ message }}</p>
+                {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="form-group">
+                <label>Korisničko ime:</label>
+                <input type="text" name="korisnicko_ime" required autofocus placeholder="Unesite korisničko ime">
+            </div>
+            <div class="form-group">
+                <label>Lozinka:</label>
+                <input type="password" name="lozinka" required placeholder="Unesite lozinku">
+            </div>
+            <button type="submit" class="btn-login">Prijavi se</button>
+        </form>
+    </div>
+</body>
+</html>

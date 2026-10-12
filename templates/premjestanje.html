@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Bočni Izbornik -->
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}" class="{% if active_page == 'tlocrt' %}active{% endif %}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}" class="{% if active_page == 'proizvodi' %}active{% endif %}">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}" class="{% if active_page == 'lokacije' %}active{% endif %}">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}" class="active">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}" class="{% if active_page == 'dobavljaci' %}active{% endif %}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}" class="{% if active_page == 'narudzbe' %}active{% endif %}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}" class="{% if active_page == 'izvjestaji' %}active{% endif %}">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}" class="{% if active_page == 'transakcije' %}active{% endif %}">Dnevnik promjena</a></li>
+                {% if session['uloga'] == 'admin' %}
+                <li><a href="{{ url_for('upravljanje_korisnicima') }}" class="{% if active_page == 'korisnici' %}active{% endif %}">Zaposlenici (Admin)</a></li>
+                {% endif %}
+            </ul>
+
+            <div class="user-profile">
+                <p>Prijavljen:</p>
+                <strong>{{ session['ime'] }} {{ session['prezime'] }}</strong><br>
+                <span class="role-badge">{{ session['uloga']|upper }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Odjava →</a>
+            </div>
+        </aside>
+
+        <!-- Glavni Sadržaj -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Premještanje opreme unutar skladišta</h1>
+            </header>
+
+            <div class="content-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                        {% if category == 'success' %}
+                            <p style="background-color: #f0fdf4; color: #166534; padding: 12px; border-radius: 6px; border: 1px solid #bbf7d0; margin-bottom: 20px; font-weight: 500;"> {{ message }}</p>
+                        {% elif category == 'info' %}
+                            <p style="background-color: #eff6ff; color: #1e40af; padding: 12px; border-radius: 6px; border: 1px solid #bfdbfe; margin-bottom: 20px; font-weight: 500;"> {{ message }}</p>
+                        {% else %}
+                            <p style="background-color: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px; border: 1px solid #fca5a5; margin-bottom: 20px; font-weight: 500;"> {{ message }}</p>
+                        {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #cbd5e1; max-width: 800px;">
+                    <h3 style="margin-bottom: 20px; color: #0f172a;">Odaberi artikl, količinu i novu lokaciju</h3>
+                    <form method="POST" style="display: flex; flex-direction: column; gap: 18px;">
+                        
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em; color: #334155;">Artikl za premještanje:</label>
+                            <!-- Dodan ID i onchange event koji poziva našu JavaScript funkciju -->
+                            <select name="proizvod_id" id="proizvod_select" onchange="azurirajLokacije()" required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="" data-lok-id="">-- Odaberi artikl --</option>
+                                {% for p in proizvodi %}
+                                <!-- data-lok-id pamti gdje se artikl trenutno nalazi -->
+                                <option value="{{ p.id }}" data-lok-id="{{ p.lokacija_id }}">{{ p.naziv }} (Šifra: {{ p.sifra }} | Dostupno: {{ p.kolicina }} kom | Trenutno u: {{ p.sektor }} {{ p.regal }}-{{ p.polica }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em; color: #334155;">Količina komada za premještanje:</label>
+                            <input type="text" name="kolicina" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Unesi broj komada..." required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </div>
+
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em; color: #334155;">Nova skladišna lokacija:</label>
+                            <!-- Dodan ID za lokaciju -->
+                            <select name="nova_lokacija_id" id="lokacija_select" required style="width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="">-- Odaberi novu poziciju --</option>
+                                {% for l in lokacije %}
+                                    {% if l.slobodno > 0 %}
+                                    <option value="{{ l.id }}">{{ l.sektor }} - Regal {{ l.regal }} (Polica {{ l.polica }} | Slobodno: {{ l.slobodno }} kom)</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" style="padding: 12px; background-color: #0284c7; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px;">Prebaci na novu lokaciju</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT ZA PAMETNO FILTRIRANJE LOKACIJA -->
+    <script>
+        function azurirajLokacije() {
+            var proizvodSelect = document.getElementById('proizvod_select');
+            var lokacijaSelect = document.getElementById('lokacija_select');
+            
+            // Pronađi trenutno odabrani artikl
+            var odabranaOpcija = proizvodSelect.options[proizvodSelect.selectedIndex];
+            
+            // Izvucimo ID lokacije na kojoj se taj artikl trenutno nalazi
+            var trenutnaLokacijaId = odabranaOpcija.getAttribute('data-lok-id');
+            
+            // Resetiraj drugi izbornik na "-- Odaberi novu poziciju --"
+            lokacijaSelect.value = "";
+            
+            // Prođi kroz sve lokacije u drugom izborniku
+            for (var i = 0; i < lokacijaSelect.options.length; i++) {
+                var lokacijaOpcija = lokacijaSelect.options[i];
+                
+                // Preskoči onaj prvi "prazan" odabir
+                if (lokacijaOpcija.value === "") continue;
+                
+                // Ako je lokacija jednaka onoj na kojoj je artikl već smješten -> Sakrij ju!
+                if (lokacijaOpcija.value === trenutnaLokacijaId) {
+                    lokacijaOpcija.disabled = true;
+                    lokacijaOpcija.style.display = 'none';
+                } else {
+                    // U suprotnom ju prikaži normalno
+                    lokacijaOpcija.disabled = false;
+                    lokacijaOpcija.style.display = '';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

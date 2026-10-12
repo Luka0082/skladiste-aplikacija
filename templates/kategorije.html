@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+       
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}" class="{% if active_page == 'tlocrt' %}active{% endif %}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}" class="{% if active_page == 'proizvodi' %}active{% endif %}">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}" class="{% if active_page == 'lokacije' %}active{% endif %}">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}" class="{% if active_page == 'premjestanje' %}active{% endif %}">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}" class="{% if active_page == 'dobavljaci' %}active{% endif %}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}" class="{% if active_page == 'narudzbe' %}active{% endif %}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}" class="{% if active_page == 'izvjestaji' %}active{% endif %}">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}" class="{% if active_page == 'transakcije' %}active{% endif %}">Dnevnik promjena</a></li>
+                {% if session['uloga'] == 'admin' %}
+                <li><a href="{{ url_for('upravljanje_korisnicima') }}" class="{% if active_page == 'korisnici' %}active{% endif %}">Zaposlenici (Admin)</a></li>
+                {% endif %}
+            </ul>
+
+            <div class="user-profile">
+                <p>Prijavljen:</p>
+                <strong>{{ session['ime'] }} {{ session['prezime'] }}</strong><br>
+                <span class="role-badge">{{ session['uloga']|upper }}</span>
+                <a href="{{ url_for('logout') }}" class="logout-btn">Odjava →</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Kategorije opreme</h1>
+            </header>
+
+            <div class="content-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                        {% if category == 'success' %}
+                            <p style="background-color: #f0fdf4; color: #166534; padding: 12px; border-radius: 6px; border: 1px solid #bbf7d0; margin-bottom: 20px; font-weight: 500;"> {{ message }}</p>
+                        {% elif category == 'info' %}
+                            <p style="background-color: #eff6ff; color: #1e40af; padding: 12px; border-radius: 6px; border: 1px solid #bfdbfe; margin-bottom: 20px; font-weight: 500;"> {{ message }}</p>
+                        {% else %}
+                            <p style="background-color: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px; border: 1px solid #fca5a5; margin-bottom: 20px; font-weight: 500;"> {{ message }}</p>
+                        {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                {% if session['uloga'] in ['admin', 'poslovoda'] %}
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #cbd5e1;">
+                    <h3 style="margin-bottom: 15px;">Dodaj novu kategoriju</h3>
+                    <form method="POST" style="display: flex; gap: 12px;">
+                        <input type="text" name="naziv" placeholder="Naziv kategorije (npr. Mobilni i pametni uređaji)" required style="padding: 10px; flex: 1;">
+                        <button type="submit" style="padding: 10px 20px; background-color: #0284c7; color: white; border: none; font-weight: bold; cursor: pointer;">+ Spremi</button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <h2 style="margin-bottom: 15px; color: #0f172a;">Sve kategorije u bazi</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Naziv kategorije</th>
+                            <th>Broj dodijeljenih artikala</th>
+                            {% if session['uloga'] in ['admin', 'poslovoda'] %}
+                            <th style="text-align: center; width: 80px;">Akcije</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for k in kategorije %}
+                        <tr>
+                            <td><strong>{{ k.naziv }}</strong></td>
+                            <td>{{ k.broj_artikala }} artikala</td>
+                            {% if session['uloga'] in ['admin', 'poslovoda'] %}
+                            <td style="text-align: center;">
+                                <div class="icon-btn-group" style="justify-content: center;">
+                                    <a href="{{ url_for('uredi_kategoriju', id=k.id) }}" class="action-icon" title="Uredi">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    </a>
+                                    <button type="button" class="action-icon delete-icon" title="Obriši" onclick="otvoriBrisanjeKategorijeModal({{ k.id }}, '{{ k.naziv | replace('\'', '\\\'') | replace('\"', '&quot;') }}')">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #64748b;">Nema unesenih kategorija.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="brisanjeKategorijeModal" class="modal-overlay">
+        <div class="modal-content" style="border-top-color: #dc2626;">
+            <h3>Brisanje kategorije</h3>
+            <p>Jeste li sigurni da želite obrisati kategoriju <strong id="brisanjeKategorijaNaziv" style="color: #0f172a;"></strong>?</p>
+            <p style="font-size: 0.85em; color: #64748b; margin-top: 10px;">Artikli koji su trenutno u ovoj kategoriji neće biti obrisani, već će im kategorija postati "Nedodijeljeno".</p>
+            
+            <form id="brisanjeKategorijeForm" method="POST">
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="zatvoriBrisanjeKategorijeModal()">Odustani</button>
+                    <button type="submit" class="btn-danger">Obriši kategoriju</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function otvoriBrisanjeKategorijeModal(id, naziv) {
+            document.getElementById('brisanjeKategorijaNaziv').innerText = naziv;
+            document.getElementById('brisanjeKategorijeForm').action = "/kategorija/obrisi/" + id;
+            document.getElementById('brisanjeKategorijeModal').style.display = 'flex';
+        }
+
+        function zatvoriBrisanjeKategorijeModal() {
+            document.getElementById('brisanjeKategorijeModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

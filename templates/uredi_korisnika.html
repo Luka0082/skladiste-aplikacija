@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mladinović d.o.o.</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="brand-header">
+                <h2>Mladinović d.o.o.</h2>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}">Skladište</a></li>
+                <li><a href="{{ url_for('upravljanje_proizvodima') }}">Katalog proizvoda</a></li>
+                <li><a href="{{ url_for('upravljanje_kategorijama') }}" class="{% if active_page == 'kategorije' %}active{% endif %}">Kategorije opreme</a></li>
+                <li><a href="{{ url_for('upravljanje_lokacijama') }}">Lokacija u skladištu</a></li>
+                <li><a href="{{ url_for('premjestanje') }}">Premještanje robe</a></li>
+                <li><a href="{{ url_for('dobavljaci') }}">Dobavljači</a></li>
+                <li><a href="{{ url_for('narudzbe') }}">Narudžbe</a></li>
+                <li><a href="{{ url_for('izvjestaji') }}">Izvještaji</a></li>
+                <li><a href="{{ url_for('transakcije') }}">Dnevnik promjena</a></li>
+                <li><a href="{{ url_for('upravljanje_korisnicima') }}" class="active">Zaposlenici (Admin)</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Uređivanje korisničkog računa</h1>
+            </header>
+
+            <div class="content-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                        <p style="background-color: #fef2f2; color: #991b1b; padding: 12px; border-radius: 6px; border: 1px solid #fca5a5; margin-bottom: 20px;">{{ message }}</p>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <div style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #cbd5e1; max-width: 600px;">
+                    <h3 style="margin-bottom: 20px; color: #0f172a;">Ažuriraj podatke zaposlenika: {{ korisnik.ime }} {{ korisnik.prezime }}</h3>
+                    
+                    <form method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label style="font-weight: bold; font-size: 0.9em;">Ime:</label>
+                                <input type="text" name="ime" value="{{ korisnik.ime }}" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                            </div>
+                            <div>
+                                <label style="font-weight: bold; font-size: 0.9em;">Prezime:</label>
+                                <input type="text" name="prezime" value="{{ korisnik.prezime }}" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em;">Korisničko ime (Login):</label>
+                            <input type="text" name="korisnicko_ime" value="{{ korisnik.korisnicko_ime }}" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                        </div>
+
+                        <div>
+                            <label style="font-weight: bold; font-size: 0.9em;">Uloga u sustavu:</label>
+                            <select name="uloga" required style="width: 100%; padding: 10px; margin-top: 5px;">
+                                <option value="skladistar" {% if korisnik.uloga == 'skladistar' %}selected{% endif %}>Skladištar (samo ulaz/izlaz)</option>
+                                <option value="poslovoda" {% if korisnik.uloga == 'poslovoda' %}selected{% endif %}>Poslovođa (unos novih artikala i narudžbi)</option>
+                                <option value="admin" {% if korisnik.uloga == 'admin' %}selected{% endif %}>Administrator (sve ovlasti)</option>
+                            </select>
+                        </div>
+
+                        <div style="margin-top: 10px; padding-top: 15px; border-top: 1px solid #cbd5e1;">
+                            <label style="font-weight: bold; font-size: 0.9em;">Nova lozinka (Opcionalno):</label>
+                            <input type="password" name="lozinka" placeholder="Unesi novu lozinku" style="width: 100%; padding: 10px; margin-top: 5px;">
+                            <span style="font-size: 0.85em; color: #64748b;">Ako ne želite mijenjati lozinku ovog korisnika, ostavite polje prazno.</span>
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <a href="{{ url_for('upravljanje_korisnicima') }}" style="padding: 12px 20px; background-color: #f1f5f9; color: #475569; text-decoration: none; font-weight: bold; border-radius: 4px; border: 1px solid #cbd5e1;">Odustani</a>
+                            <button type="submit" style="padding: 12px 20px; background-color: #0284c7; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer;">Spremi promjene</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
